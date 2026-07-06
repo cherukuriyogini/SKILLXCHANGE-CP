@@ -1,0 +1,15 @@
+{
+  "name": "skillxchange-root",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently \"npm run server --prefix backend\" \"npm run dev --prefix frontend\"",
+    "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.4",
+    "autoprefixer": "^10.5.0",
+    "concurrently": "^8.2.2",
+    "postcss": "^8.5.13",
+    "tailwindcss": "^4.2.4"
+  }
+}

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="SkillXchange - The ultimate peer-to-peer learning platform. Teach what you know, learn what you don't. Powered by AI." />
+    <meta name="keywords" content="learning, peer-to-peer, skills, mentorship, AI tutor, education, SkillXchange" />
+    <meta name="author" content="SkillXchange Team" />
+    <title>SkillXchange | Peer-to-Peer Learning Marketplace</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      window.global = window;
+      window.process = {
+        env: { DEBUG: undefined },
+        version: '',
+        nextTick: (fn) => setTimeout(fn, 0),
+      };
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
