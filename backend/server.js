@@ -20,9 +20,11 @@ validateEnv();
 
 // ── Step 3: Load app modules (safe — env is guaranteed to be loaded) ──
 const http = require('http');
+const os = require('os');
 const { Server } = require('socket.io');
 const connectDB = require('./config/db');
 const app = require('./app');
+const { allowedOrigins } = require('./app');
 
 // Connect to database
 connectDB();
@@ -38,10 +40,25 @@ if (geminiService.isConfigured()) {
 const server = http.createServer(app);
 
 // Socket.io for real-time features
+// Use the same allowedOrigins as Express CORS — never a wildcard in production.
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
+    origin: (origin, callback) => {
+      // Allow requests with no origin (server-to-server, native clients)
+      if (!origin) return callback(null, true);
+
+      // In development, allow all localhost/127.0.0.1 origins
+      const isDev = process.env.NODE_ENV !== 'production';
+      if (isDev && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      return callback(new Error(`Socket.IO CORS: Origin '${origin}' not allowed`));
+    },
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
@@ -215,10 +232,15 @@ const PORT = process.env.PORT || 5008;
 const { execSync } = require('child_process');
 
 /**
- * Kill any process currently occupying the given port (Windows only).
- * Returns true if a process was found and killed, false otherwise.
+ * Kill any process currently occupying the given port.
+ * WINDOWS ONLY — uses netstat + taskkill which are not available on Linux/macOS.
+ * Guarded by os.platform() to prevent errors in Linux production environments.
  */
 function killPortProcess(port) {
+  if (os.platform() !== 'win32') {
+    // Not Windows — skip silently. Linux/macOS hosts handle port conflicts differently.
+    return false;
+  }
   try {
     const result = execSync(
       `netstat -ano | findstr ":${port} " | findstr "LISTENING"`,

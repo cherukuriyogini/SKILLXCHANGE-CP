@@ -1,6 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+
+// ── Allowed Origins (shared with Socket.IO in server.js) ─────────────────────
+// Build from environment variables — never hardcode production domains here.
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  process.env.FRONTEND_URL,
+].filter(Boolean); // remove undefined/empty entries
+
 // NOTE: dotenv is intentionally NOT loaded here.
 // Environment variables are loaded once by server.js before this module
 // is required. Loading dotenv here again would be redundant and could
@@ -16,10 +24,16 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// Rate Limiting — relaxed for development/active testing
+// Rate Limiting — environment-aware
+// Production: 100 req/10min (security)
+// Development: 500 req/10min (usability during active testing)
+const isProduction = process.env.NODE_ENV === 'production';
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 mins
-  max: 500 // increased limit for high-frequency interactions
+  max: isProduction ? 100 : 500,
+  standardHeaders: true,  // Return rate limit info in RateLimit-* headers
+  legacyHeaders: false,   // Disable X-RateLimit-* headers
+  message: { success: false, message: 'Too many requests, please try again later.' }
 });
 app.use('/api', limiter);
 app.use('/uploads', express.static('uploads'));
@@ -30,15 +44,24 @@ app.use(express.json());
 // Cookie parser
 app.use(cookieParser());
 
-// Enable CORS — simplified for development reliability
+// Enable CORS — environment-variable driven, production-safe
 app.use(cors({
   origin: (origin, callback) => {
-    // In development, allow all localhost origins
-    if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      callback(null, true);
-    } else {
-      callback(null, new Error('Not allowed by CORS'));
+    // Allow requests with no origin (Postman, server-to-server, curl)
+    if (!origin) return callback(null, true);
+
+    // In development, also allow all localhost/127.0.0.1 origins
+    const isDev = process.env.NODE_ENV !== 'production';
+    if (isDev && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      return callback(null, true);
     }
+
+    // In production, allow only explicitly configured origins
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS: Origin '${origin}' not allowed`));
   },
   credentials: true
 }));
@@ -84,3 +107,4 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
+module.exports.allowedOrigins = allowedOrigins;
