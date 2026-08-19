@@ -39,11 +39,14 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 app.use('/uploads', express.static('uploads'));
 
-// Body parser
-app.use(express.json());
-
-// Cookie parser
+// Body parser & Cookie parser
+app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
+
+// Input Sanitization & Injection Prevention (NoSQL injection + XSS protection)
+const { nosqlSanitizer, sanitizeInput } = require('./middleware/sanitize');
+app.use(nosqlSanitizer);
+app.use(sanitizeInput);
 
 // Enable CORS — environment-variable driven, production-safe
 app.use(cors({

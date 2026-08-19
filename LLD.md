@@ -456,11 +456,12 @@ Request → Helmet (security headers)
         → CORS validation
         → Body Parser (express.json)
         → Cookie Parser
+        → Input Sanitizer & NoSQL Injection Prevention (express-mongo-sanitize + validator)
         → Route Handler
+          → Redis Cache Middleware (cacheResponse / clearCache)
           → Auth Middleware (JWT verify from cookie)
           → Role Middleware (check allowedRoles)
-          → Controller
-            → Mongoose queries
+          → Controller (Mongoose Queries & ACID Transactions)
             → Response
         → Global Error Handler
 ```

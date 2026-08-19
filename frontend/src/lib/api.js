@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { scheduleMicrotask } from './asyncPatterns';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5008/api';
 
@@ -53,8 +54,10 @@ api.interceptors.response.use(
         localStorage.removeItem('user');
         localStorage.removeItem('activeRole');
         
-        // Dispatch custom event so AuthContext can update state
-        window.dispatchEvent(new Event('auth-logout'));
+        // Dispatch custom event via Microtask queue so state updates asynchronously
+        scheduleMicrotask(() => {
+          window.dispatchEvent(new Event('auth-logout'));
+        });
         
         return Promise.reject(refreshError);
       }

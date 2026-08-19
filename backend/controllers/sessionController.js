@@ -382,6 +382,9 @@ exports.confirmReschedule = async (req, res) => {
 // @route   PATCH /api/sessions/:id/complete
 // @access  Private/Mentor/Learner
 exports.completeSession = async (req, res) => {
+  const mongoose = require('mongoose');
+  let dbSession = null;
+
   try {
     const session = await findSessionByIdOrCustomId(req.params.id);
     if (!session) return res.status(404).json({ success: false, message: 'Session not found' });
@@ -391,12 +394,24 @@ exports.completeSession = async (req, res) => {
       return res.status(200).json({ success: true, data: session });
     }
 
-    session.status = 'completed';
-    await session.save();
+    // ── ACID Database Transaction ─────────────────────────────────────────────
+    // Ensures atomic update of session state, learner XP, level up, and notifications
+    try {
+      dbSession = await mongoose.startSession();
+      dbSession.startTransaction();
+    } catch (txnInitErr) {
+      // Fallback for standalone MongoDB environments without replica sets
+      dbSession = null;
+    }
 
-    // Award XP to Learner once
+    const sessionOpts = dbSession ? { session: dbSession } : {};
+
+    session.status = 'completed';
+    await session.save(sessionOpts);
+
+    // Award XP to Learner atomically within transaction
     if (!session.xpAwarded) {
-      const learner = await User.findById(session.learnerId);
+      const learner = await User.findById(session.learnerId).session(dbSession || null);
       if (learner) {
         learner.xp += 100;
         session.xpAwarded = 100;
@@ -414,14 +429,28 @@ exports.completeSession = async (req, res) => {
             relatedId: learner._id
           });
         }
-        await learner.save();
+        await learner.save(sessionOpts);
       }
     }
 
-    await session.save();
+    await session.save(sessionOpts);
+
+    // Commit Transaction
+    if (dbSession) {
+      await dbSession.commitTransaction();
+    }
+
     res.status(200).json({ success: true, data: session });
   } catch (err) {
+    // Abort Transaction on failure
+    if (dbSession) {
+      try { await dbSession.abortTransaction(); } catch (_) {}
+    }
     res.status(500).json({ success: false, message: err.message });
+  } finally {
+    if (dbSession) {
+      dbSession.endSession();
+    }
   }
 };
 
