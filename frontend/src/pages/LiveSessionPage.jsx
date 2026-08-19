@@ -67,9 +67,12 @@ export default function LiveSessionPage() {
   const [showParticipants, setShowParticipants] = useState(false);
   const [showWhiteboard, setShowWhiteboard] = useState(false);
   const [mediaError, setMediaError] = useState(null); 
+  const [reactions, setReactions] = useState([]);
+  const [showReactionsMenu, setShowReactionsMenu] = useState(false);
   const [networkHealth, setNetworkHealth] = useState('excellent');
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
+
 
   const activeRole = user?.roles?.includes('mentor') ? 'mentor' : 'learner';
 
