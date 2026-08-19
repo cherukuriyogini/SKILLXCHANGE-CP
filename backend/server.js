@@ -64,6 +64,10 @@ const io = new Server(server, {
 
 app.set('io', io);
 
+// ── Step 4: Start background scheduled jobs (cron) ───────────────────────────
+const { initScheduler } = require('./jobs/scheduler');
+initScheduler(io);
+
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 

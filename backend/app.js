@@ -16,6 +16,7 @@ const allowedOrigins = [
 
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { isRedisConnected } = require('./config/redis');
 
 const app = express();
 

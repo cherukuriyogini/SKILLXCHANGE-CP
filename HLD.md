@@ -1,4 +1,4 @@
-﻿# High-Level Design (HLD) — SkillXchange
+# High-Level Design (HLD) — SkillXchange
 
 ## 1. Overview
 
@@ -12,21 +12,23 @@
 ┌──────────────────────────────────────────────────────────────────────┐
 │                          CLIENT LAYER                                │
 │   React 19 + Vite SPA (Tailwind CSS, Framer Motion, Recharts)        │
-│   Hosted: Vercel / Netlify                                           │
+│   Docker Nginx / Hosted: Vercel / Netlify                            │
 └─────────────────────────────┬────────────────────────────────────────┘
                               │ HTTPS / WebSocket (WSS)
 ┌─────────────────────────────▼────────────────────────────────────────┐
 │                          API GATEWAY LAYER                           │
 │   Express.js REST API  +  Socket.IO (Real-time)                      │
-│   Helmet | CORS | Rate Limiter | JWT Auth Middleware                 │
-└────────┬──────────────────────────────────────┬──────────────────────┘
-         │ Mongoose ODM                          │ Google Generative AI SDK
-┌────────▼───────────┐                ┌──────────▼──────────────────────┐
-│   MongoDB Atlas    │                │   Google Gemini AI Service       │
-│  (Primary Store)   │                │   (AI Tutor / Summaries / LLM)   │
-└────────────────────┘                └─────────────────────────────────┘
-         │
-┌────────▼───────────┐
+│   Helmet | CORS | Rate Limiter | JWT Auth | Redis Cache Middleware   │
+│   Automated Cron Scheduler (node-cron for reminders & cleanup)      │
+└──────┬──────────────────────┬─────────────────────────┬──────────────┘
+       │ Mongoose             │ ioredis                 │ Gemini SDK
+┌──────▼─────────────┐ ┌──────▼─────────────┐ ┌─────────▼──────────────┐
+│   MongoDB Atlas    │ │   Redis Server     │ │ Google Gemini AI Service│
+│  (Primary Store)   │ │  (In-Memory Cache) │ │ (AI Tutor / Summaries) │
+│ (Indexed Schemas)  │ └────────────────────┘ └────────────────────────┘
+└────────────────────┘
+       │
+┌──────▼─────────────┐
 │   File Storage     │
 │  (Multer / Local   │
 │   /uploads dir)    │
@@ -166,14 +168,17 @@ User → Types question OR uploads PDF/DOCX
 | Real-Time | Socket.IO Client + Server |
 | Video | WebRTC (simple-peer) |
 | Backend | Node.js, Express.js v5 |
-| Database | MongoDB (Mongoose ODM) |
+| Database | MongoDB (Mongoose ODM with compound indexes) |
+| In-Memory Cache | Redis (ioredis with non-blocking fallback) |
+| Background Jobs | node-cron (reminders, streak audit, cleanup) |
+| Containerization | Docker multi-stage builds + Docker Compose |
 | Authentication | JWT (httpOnly cookies) + bcryptjs |
 | AI | Google Gemini API (@google/generative-ai) |
 | File Upload | Multer |
 | Document Parsing | pdf-parse, mammoth |
 | Security | Helmet, express-rate-limit, express-validator |
-| Frontend Hosting | Vercel / Netlify |
-| Backend Hosting | Cloud VM / Railway / Render |
+| Frontend Hosting | Docker / Vercel / Netlify |
+| Backend Hosting | Docker / Cloud VM / Railway / Render |
 
 ---
 

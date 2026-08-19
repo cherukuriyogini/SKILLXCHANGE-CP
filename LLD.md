@@ -1,4 +1,4 @@
-﻿# Low-Level Design (LLD) — SkillXchange
+# Low-Level Design (LLD) — SkillXchange
 
 ## 1. Overview
 
@@ -532,6 +532,7 @@ user.lastActiveDate = today
 |---|---|
 | `PORT` | Server port (default: 5000) |
 | `MONGO_URI` | MongoDB connection string |
+| `REDIS_URL` | Redis connection URL (`redis://127.0.0.1:6379`) |
 | `JWT_SECRET` | JWT signing secret |
 | `JWT_EXPIRE` | JWT expiry (e.g., `7d`) |
 | `REFRESH_TOKEN_SECRET` | Refresh token secret |
@@ -553,4 +554,55 @@ user.lastActiveDate = today
 
 ---
 
-*Document version: 1.0 | Project: SkillXchange | Date: August 2026*
+## 11. Caching Layer (Redis)
+
+### 11.1 Cache Keys & Expiration
+
+| Cache Key Pattern | TTL | Invalidation Trigger |
+|---|---|---|
+| `cache:mentors:{query}` | 180s (3m) | Mentor profile update / role change |
+| `cache:users:{userId}` | 120s (2m) | User updates profile/settings/avatar |
+| `cache:users:leaderboard` | 60s (1m) | XP award / moderator update |
+| `cache:sessions:user:{userId}:{query}` | 60s (1m) | Session status update (accept/cancel/complete) |
+| `cache:sessions:stats:{userId}` | 60s (1m) | Session create / complete / feedback |
+
+### 11.2 Graceful Fallback Strategy
+
+The Redis client (`backend/config/redis.js`) uses `ioredis` with non-blocking error handling. If Redis is unavailable or down, requests seamlessly bypass the cache and query MongoDB directly without throwing errors or interrupting user requests.
+
+---
+
+## 12. Background Scheduled Jobs (node-cron)
+
+### 12.1 Cron Job Specifications (`backend/jobs/scheduler.js`)
+
+| Job Name | Schedule Expression | Interval | Description |
+|---|---|---|---|
+| **Session Reminders** | `* * * * *` | Every 1 minute | Finds accepted sessions scheduled in next 29-30 mins; generates in-app notifications and sends real-time Socket.IO alerts to both learner and mentor rooms |
+| **Streak Maintenance** | `5 0 * * *` | Daily at 00:05 AM | Audits all users with active streaks; resets `currentStreak` to 0 if `lastActiveDate` was before yesterday |
+| **Stale Cleanup** | `0 * * * *` | Every 1 hour | Cancels unaccepted session requests older than 48 hours; marks accepted sessions whose time passed >4 hours ago without action as `no-show` |
+
+---
+
+## 13. Docker Containerization & Orchestration
+
+### 13.1 Multi-Stage Dockerfiles
+
+- **Backend (`backend/Dockerfile`)**:
+  - Stage 1 (`deps`): Alpine Node 20 with `npm ci --only=production`
+  - Stage 2 (`runner`): Non-root user `nodeuser` (UID 1001), healthcheck via `GET /api/health`
+- **Frontend (`frontend/Dockerfile`)**:
+  - Stage 1 (`builder`): Node 20 Alpine builds Vite SPA assets into `dist/`
+  - Stage 2 (`runner`): Nginx 1.25 Alpine serves static SPA with gzip compression, security headers, and HTML5 pushState fallback (`try_files $uri $uri/ /index.html`)
+
+### 13.2 Docker Compose (`docker-compose.yml`)
+
+Orchestrates 4 services on a dedicated bridge network (`skillxchange_net`):
+1. `mongodb` (mongo:7.0) with persistent volume `mongo_data` and healthcheck
+2. `redis` (redis:7.2-alpine) with persistent volume `redis_data` and healthcheck
+3. `backend` (Express API) with dependency chaining (`depends_on: { mongodb: healthy, redis: healthy }`)
+4. `frontend` (Nginx SPA) on port 80
+
+---
+
+*Document version: 1.1 | Project: SkillXchange | Date: August 2026*

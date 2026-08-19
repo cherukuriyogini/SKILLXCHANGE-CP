@@ -1,4 +1,4 @@
-﻿# Product Requirements Document (PRD) — SkillXchange
+# Product Requirements Document (PRD) — SkillXchange
 
 ## 1. Product Overview
 
@@ -310,7 +310,10 @@ Traditional online learning platforms are passive and expensive. Learners often 
 
 | Dependency | Purpose |
 |---|---|
-| MongoDB Atlas | Cloud database |
+| MongoDB Atlas | Cloud database with indexed schemas |
+| Redis | In-memory cache for fast read response times |
+| node-cron | Automated background task scheduling |
+| Docker & Compose | Containerized application orchestration |
 | Google Gemini API | AI tutor, summaries, learning paths |
 | WebRTC (simple-peer) | P2P video in live sessions |
 | Socket.IO | Real-time events (chat, video signaling, notifications) |
@@ -320,4 +323,4 @@ Traditional online learning platforms are passive and expensive. Learners often 
 
 ---
 
-*Document version: 1.0 | Project: SkillXchange | Date: August 2026*
+*Document version: 1.1 | Project: SkillXchange | Date: August 2026*

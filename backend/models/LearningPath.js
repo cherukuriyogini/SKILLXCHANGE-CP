@@ -34,4 +34,8 @@ const learningPathSchema = new mongoose.Schema({
   }
 });
 
+// ── MongoDB Indexes ──────────────────────────────────────────────────────────
+learningPathSchema.index({ userId: 1 });
+learningPathSchema.index({ userId: 1, skill: 1 }, { unique: true });
+
 module.exports = mongoose.model('LearningPath', learningPathSchema);

@@ -79,4 +79,11 @@ sessionSchema.pre('save', async function() {
   }
 });
 
+// ── MongoDB Indexes ──────────────────────────────────────────────────────────
+sessionSchema.index({ learnerId: 1, status: 1 });
+sessionSchema.index({ mentorId: 1, status: 1 });
+sessionSchema.index({ scheduledTime: 1 });
+sessionSchema.index({ sessionId: 1 }, { unique: true });
+sessionSchema.index({ status: 1, scheduledTime: 1 });
+
 module.exports = mongoose.model('Session', sessionSchema);

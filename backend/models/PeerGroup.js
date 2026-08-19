@@ -62,4 +62,9 @@ const peerGroupSchema = new mongoose.Schema({
   }
 });
 
+// ── MongoDB Indexes ──────────────────────────────────────────────────────────
+peerGroupSchema.index({ skill: 1, level: 1, isActive: 1 });
+peerGroupSchema.index({ 'members.userId': 1 });
+peerGroupSchema.index({ createdBy: 1 });
+
 module.exports = mongoose.model('PeerGroup', peerGroupSchema);

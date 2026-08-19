@@ -50,4 +50,9 @@ const ticketSchema = new mongoose.Schema({
   }
 });
 
+// ── MongoDB Indexes ──────────────────────────────────────────────────────────
+ticketSchema.index({ userId: 1, status: 1 });
+ticketSchema.index({ status: 1, priority: -1 });
+ticketSchema.index({ assignedTo: 1, status: 1 });
+
 module.exports = mongoose.model('Ticket', ticketSchema);

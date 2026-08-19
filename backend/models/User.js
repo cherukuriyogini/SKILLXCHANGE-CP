@@ -178,4 +178,13 @@ userSchema.methods.getResetPasswordToken = function() {
   return resetToken;
 };
 
+// ── MongoDB Indexes ──────────────────────────────────────────────────────────
+userSchema.index({ email: 1 });
+userSchema.index({ roles: 1 });
+userSchema.index({ skillsTeach: 1 });
+userSchema.index({ skillsLearn: 1 });
+userSchema.index({ status: 1, reputationScore: -1 });
+userSchema.index({ isBlocked: 1, isFlagged: 1 });
+userSchema.index({ reputationScore: -1 });
+
 module.exports = mongoose.model('User', userSchema);
