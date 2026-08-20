@@ -10,8 +10,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please add an email'],
     unique: true,
+    trim: true,
+    lowercase: true,
     match: [
-      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+      /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
       'Please add a valid email'
     ]
   },
@@ -179,7 +181,6 @@ userSchema.methods.getResetPasswordToken = function() {
 };
 
 // ── MongoDB Indexes ──────────────────────────────────────────────────────────
-userSchema.index({ email: 1 });
 userSchema.index({ roles: 1 });
 userSchema.index({ skillsTeach: 1 });
 userSchema.index({ skillsLearn: 1 });

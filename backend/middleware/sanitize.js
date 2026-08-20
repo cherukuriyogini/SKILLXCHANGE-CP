@@ -1,4 +1,4 @@
-﻿/**
+/**
  * middleware/sanitize.js — Input Sanitization & Injection Prevention
  * =================================================================
  * Protects against:
@@ -55,14 +55,30 @@ function sanitizeInput(req, res, next) {
 }
 
 /**
- * Express mongo sanitize options
+ * Express 5 compatible mongo sanitize middleware
  */
-const nosqlSanitizer = mongoSanitize({
-  replaceWith: '_',
-  onSanitize: ({ req, key }) => {
-    console.warn(`[Security] ⚠ NoSQL injection attempt blocked in key: "${key}" from IP: ${req.ip}`);
+const nosqlSanitizer = (req, res, next) => {
+  ['body', 'params', 'headers'].forEach((key) => {
+    if (req[key] && typeof req[key] === 'object') {
+      mongoSanitize.sanitize(req[key], {
+        replaceWith: '_',
+        onSanitize: ({ key: targetKey }) => {
+          console.warn(`[Security] ⚠ NoSQL injection attempt blocked in key: "${targetKey}" from IP: ${req.ip}`);
+        }
+      });
+    }
+  });
+  if (req.query && typeof req.query === 'object') {
+    // In Express 5, req.query is a getter. Mutate in-place without reassigning req.query
+    mongoSanitize.sanitize(req.query, {
+      replaceWith: '_',
+      onSanitize: ({ key: targetKey }) => {
+        console.warn(`[Security] ⚠ NoSQL injection attempt blocked in key: "${targetKey}" from IP: ${req.ip}`);
+      }
+    });
   }
-});
+  next();
+};
 
 module.exports = {
   nosqlSanitizer,

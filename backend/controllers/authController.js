@@ -13,7 +13,8 @@ exports.signup = async (req, res) => {
       : [];
     const finalRoles = normalizedRoles.length ? normalizedRoles : ['learner'];
 
-    const userExists = await User.findOne({ email });
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const userExists = await User.findOne({ email: normalizedEmail });
 
     if (userExists) {
       return res.status(400).json({
@@ -23,8 +24,8 @@ exports.signup = async (req, res) => {
     }
 
     await User.create({
-      name,
-      email,
+      name: (name || '').trim(),
+      email: normalizedEmail,
       password,
       roles: finalRoles,
       bio: bio || '',
@@ -38,6 +39,12 @@ exports.signup = async (req, res) => {
     });
   } catch (err) {
     console.error('Signup Error:', err);
+    if (err.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is already registered. Please login instead.'
+      });
+    }
     res.status(500).json({
       success: false,
       message: err.message
@@ -59,9 +66,9 @@ exports.login = async (req, res) => {
       });
     }
 
-    const trimmedEmail = email.trim();
+    const normalizedEmail = email.trim().toLowerCase();
     const user = await User.findOne({ 
-      email: { $regex: new RegExp('^' + trimmedEmail.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i') } 
+      email: normalizedEmail 
     }).select('+password');
 
     if (!user) {

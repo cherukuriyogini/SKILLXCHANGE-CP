@@ -99,6 +99,17 @@ app.get('/', (req, res) => {
   res.send('SkillXchange API is running...');
 });
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ 
+    success: true, 
+    message: 'SkillXchange API is healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    env: process.env.NODE_ENV
+  });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('[GlobalErrorHandler]:', err.message);
