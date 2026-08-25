@@ -27,7 +27,12 @@ export default defineConfig([
       'no-empty': 'off',
       'react-refresh/only-export-components': 'warn',
     },
-
+  },
+  {
+    files: ['server.js'],
+    languageOptions: {
+      globals: globals.node,
+      sourceType: 'commonjs',
+    },
   },
 ])
-
