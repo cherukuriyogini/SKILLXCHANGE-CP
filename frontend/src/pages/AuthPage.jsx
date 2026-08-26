@@ -57,9 +57,14 @@ export default function AuthPage() {
         }
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 
-                  err.response?.data?.errors?.[0]?.message || 
-                  'Authentication failed. Please check your details.';
+      let msg = 'Authentication failed. Please check your details.';
+      if (!err.response) {
+        msg = 'Unable to connect to server. Please make sure the backend is running on port 5008.';
+      } else if (err.response.data?.message) {
+        msg = err.response.data.message;
+      } else if (err.response.data?.errors?.[0]?.message) {
+        msg = err.response.data.errors[0].message;
+      }
       setError(msg);
     } finally {
       setLoading(false);

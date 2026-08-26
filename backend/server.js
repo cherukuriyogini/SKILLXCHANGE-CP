@@ -53,7 +53,10 @@ const io = new Server(server, {
         return callback(null, true);
       }
 
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      const cleanOrigin = origin.trim().replace(/\/+$/, '');
+      if (allowedOrigins.some(allowed => allowed.toLowerCase() === cleanOrigin.toLowerCase())) {
+        return callback(null, true);
+      }
 
       return callback(new Error(`Socket.IO CORS: Origin '${origin}' not allowed`));
     },

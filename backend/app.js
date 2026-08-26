@@ -4,10 +4,12 @@ const cookieParser = require('cookie-parser');
 
 // ── Allowed Origins (shared with Socket.IO in server.js) ─────────────────────
 // Build from environment variables — never hardcode production domains here.
-const allowedOrigins = [
+const rawOrigins = [
   process.env.CLIENT_URL,
   process.env.FRONTEND_URL,
-].filter(Boolean); // remove undefined/empty entries
+].filter(Boolean);
+
+const allowedOrigins = rawOrigins.map(url => url.trim().replace(/\/+$/, ''));
 
 // NOTE: dotenv is intentionally NOT loaded here.
 // Environment variables are loaded once by server.js before this module
@@ -60,8 +62,8 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // In production, allow only explicitly configured origins
-    if (allowedOrigins.includes(origin)) {
+    const cleanOrigin = origin.trim().replace(/\/+$/, '');
+    if (allowedOrigins.some(allowed => allowed.toLowerCase() === cleanOrigin.toLowerCase())) {
       return callback(null, true);
     }
 
